@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epopeia - Histórias Curtas</title>
+</head>
+<style>
+    body {
+        margin: 0 auto;
+        max-width: 800px;
+        font-family: sans-serif;
+    }
+
+    .header {
+        padding: 15px;
+        background-color: white;
+    }
+
+    .content {
+        padding: 15px;
+    }
+
+    .logo {
+        width: 250px;
+    }
+
+    .menu {
+        margin: 25px 0 0 0;
+    }
+
+    .menu a {
+        color: white;
+        background-color: black;
+        text-decoration: none;
+        margin: 5px;
+        padding: 5px;
+        cursor: pointer;
+    }
+
+    .menu a span {
+        font-size: 14px;
+    }
+
+    .menu a:hover {
+        color: black;
+        background-color: white;
+    }
+
+    .section {
+        margin-bottom: 15px;
+    }
+
+    .social img {
+        width: 30px;
+        padding-right: 5px;
+        margin-top: 20px;
+    }
+
+    .footer {
+        color: gray;
+        font-size: 14px;
+        margin-top: 40px;
+    }
+
+    .footer div {
+        padding: 5px 0;
+    }
+
+    .footer a {
+        color: gray;
+    }
+
+    .hide {
+        display: none;
+    }
+    .cover {
+        width: 150px;
+    }
+    #episode-cover {
+        max-width: 300px;
+    }
+    #episode-player {
+        max-width: 300px;
+        margin-top: -4px;
+        background-color: #f2f3f4;
+        border-radius: 0 0 10px 10px;
+    }
+</style>
+
+<body>
+    <div id="FixedHeader" class="header">
+        <a href=""><img class="logo" src="sources/epopeia-logo-hc.png"></img></a>
+        <div class="menu">
+            <a id="ep-link" href="#episodios" class="view"><span>►</span> lista de episódios</a>
+            <a id="voltar-link" href="javascript:history.back()" class="view hide"><span>←</span> voltar</a>
+        </div>
+    </div>
+    <div class="content">
+        <div id="episodio" class="section view hide">
+            <div><img id="episode-cover" /></div>
+            <audio id="episode-player" controls >
+                O seu navegador não suporta elementos de áudio.
+            </audio>
+            <h3 id="episode-title"></h3>
+            <span id="episode-description"></span>
+        </div>
+        <div id="episodios" class="section view hide"></div>
+        <div id="home" class="section view">
+            <div>
+                Acreditamos que podcasts e audio-books são mídias em ascensão. Ao longo dos próximos anos, esses
+                formatos serão amplamente adotados pelos brasileiros. Inspirados nessa expectativa o EPOPEIA surgiu.
+                Somos um podcast que seleciona histórias curtas de escritores promissores e as transforma em áudio! Com
+                as mãos livres, você pode ouvir enquanto _________ (lava a louça, planta bananeira, sei lá, preencha
+                essa lacuna com o que quiser).
+            </div>
+        </div>
+        <div class="footer">
+            <div class="social">
+                <a href="https://www.instagram.com/epopeiapodcast/" target="_blank"><img src="sources/instagram.svg"
+                        alt="Instagram"></img></a>
+                <a href="https://www.facebook.com/epopeia.podcast/" target="_blank"><img src="sources/facebook.svg"
+                        alt="Facebook"></img></a>
+                <a href="https://open.spotify.com/show/6gHN6MVzFGz7ScjUTQjFdL" target="_blank"><img
+                        src="sources/spotify-sketch.svg" alt="Spotify"></img></a>
+                <a href="http://epopeiapodcast.tumblr.com/" target="_blank"><img src="sources/tumblr.svg"
+                        alt="Tumblr"></img></a>
+                <a href="https://anchor.fm/s/1e0beb40/podcast/rss" target="_blank"><img src="sources/rss.svg"
+                        alt="Rss"></img></a>
+            </div>
+            <div>Todas as imagens e sons utilizados pelo Epopéia são livres de atribuição autoral. Os textos que
+                publicamos não podem ser utilizados sem a autorização de seus autores.</div>
+            <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a
+                    href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
+            <div>EpopeiaPodcast@gmail.com</div>
+        </div>
+    </div>
+</body>
+<script src="routie.js"></script>
+<script>
+    const viewClass = "view";
+    const hideClass = "hide";
+    let episodes = [];
+
+    function showView(viewId) {
+        let viewElements = document.getElementsByClassName(viewClass);
+        for (let element of viewElements) {
+            if (!element.classList.contains(hideClass)) {
+                element.classList.add(hideClass);
+            }
+        }
+
+        document.getElementById(viewId).classList.remove(hideClass);
+    }
+
+    function getInnerContent(el, key) {
+        let itemKey = el.querySelector(key);
+        let value = itemKey ? itemKey.innerHTML : 0;
+        if (Number.isInteger(value)) return value;
+
+        return value.replace("<![CDATA[", "").replace("]]>", "");
+    }
+
+    function getAttribute(el, key, attr) {
+        return el.querySelector(key).getAttribute(attr);
+    }
+
+    function parse(el) {
+        return {
+            title: getInnerContent(el, "title"),
+            description: getInnerContent(el, "description"),
+            mp3: getAttribute(el, "enclosure", "url"),
+            img: getAttribute(el, "image", "href"),
+            episode: getInnerContent(el, "episode"),
+            season: getInnerContent(el, "season"),
+        }
+    }
+
+    function getEpisodesFromRss() {
+        const RSS_URL = `https://anchor.fm/s/1e0beb40/podcast/rss`;
+
+        fetch(RSS_URL)
+            .then(response => response.text())
+            .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+            .then(data => {
+                const items = data.querySelectorAll("item");
+                let html = ``;
+                items.forEach(el => {
+                    let ep = parse(el);
+                    episodes.push(ep);
+                    html += `
+                        <a href="#episodio/${ep.season}/${ep.episode}">
+                            <img class="cover" src="${ep.img}" />
+                        </a>
+                    `;
+                });
+                document.getElementById('episodios').insertAdjacentHTML("beforeend", html);
+                test_html = html;
+            });
+    }
+
+    function setEpisode(temporada, episodio) {
+        let ep = episodes.find((item) => item.season == temporada && item.episode == episodio);
+        
+        document.getElementById('episode-cover').setAttribute("src", ep.img);
+        document.getElementById('episode-player').setAttribute("src", ep.mp3);
+        document.getElementById('episode-title').innerHTML = ep.title;
+        document.getElementById('episode-description').innerHTML = ep.description;
+    }
+
+    routie({
+        '': () => {
+            showView('home');
+            document.getElementById("voltar-link").classList.add(hideClass);
+            document.getElementById("ep-link").classList.remove(hideClass);
+        },
+        'episodios': () => {
+            showView('episodios');
+            document.getElementById("ep-link").classList.add(hideClass);
+            document.getElementById("voltar-link").classList.remove(hideClass);
+        },
+        'episodio/:temporada/:episodio': (temporada, episodio) => {
+            setEpisode(temporada, episodio);
+            showView('episodio');
+            document.getElementById("ep-link").classList.add(hideClass);
+            document.getElementById("voltar-link").classList.remove(hideClass);
+        }
+    });
+
+    function init() {
+        getEpisodesFromRss();
+    }
+
+    init();
+</script>
+
+</html>
