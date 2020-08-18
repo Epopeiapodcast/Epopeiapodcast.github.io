@@ -18,6 +18,10 @@
         background-color: white;
     }
 
+    a {
+        text-decoration: none;
+    }
+
     .content {
         padding: 15px;
     }
@@ -93,8 +97,8 @@
     <div id="FixedHeader" class="header">
         <a href=""><img class="logo" src="sources/epopeia-logo-hc.png"></img></a>
         <div class="menu">
-            <a id="ep-link" href="#episodios" class="view"><span>►</span> lista de episódios</a>
-            <a id="voltar-link" href="javascript:history.back()" class="view hide"><span>←</span> voltar</a>
+            <a id="episodes-link" href="#episodios" class="view"><span>►</span> Lista de episódios</a>
+            <a id="voltar-link" href="" class="view hide"><span>←</span> voltar</a>
         </div>
     </div>
     <div class="content">
@@ -177,10 +181,10 @@
         }
     }
 
-    function getEpisodesFromRss() {
+    async function getEpisodesFromRss() {
         const RSS_URL = `https://anchor.fm/s/1e0beb40/podcast/rss`;
 
-        fetch(RSS_URL)
+        return fetch(RSS_URL)
             .then(response => response.text())
             .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
             .then(data => {
@@ -196,40 +200,46 @@
                     `;
                 });
                 document.getElementById('episodios').insertAdjacentHTML("beforeend", html);
-                test_html = html;
             });
     }
 
     function setEpisode(temporada, episodio) {
         let ep = episodes.find((item) => item.season == temporada && item.episode == episodio);
-        
         document.getElementById('episode-cover').setAttribute("src", ep.img);
         document.getElementById('episode-player').setAttribute("src", ep.mp3);
         document.getElementById('episode-title').innerHTML = ep.title;
         document.getElementById('episode-description').innerHTML = ep.description;
     }
 
-    routie({
-        '': () => {
-            showView('home');
-            document.getElementById("voltar-link").classList.add(hideClass);
-            document.getElementById("ep-link").classList.remove(hideClass);
-        },
-        'episodios': () => {
-            showView('episodios');
-            document.getElementById("ep-link").classList.add(hideClass);
-            document.getElementById("voltar-link").classList.remove(hideClass);
-        },
-        'episodio/:temporada/:episodio': (temporada, episodio) => {
-            setEpisode(temporada, episodio);
-            showView('episodio');
-            document.getElementById("ep-link").classList.add(hideClass);
-            document.getElementById("voltar-link").classList.remove(hideClass);
+    function setElementVisible(elementId, show) {
+        if (show) {
+            document.getElementById(elementId).classList.remove(hideClass);
+        } else {
+            document.getElementById(elementId).classList.add(hideClass);
         }
-    });
+    }
 
-    function init() {
-        getEpisodesFromRss();
+    async function init() {
+        await getEpisodesFromRss();
+
+        routie({
+            '': () => {
+                showView('home');
+                setElementVisible("voltar-link", false);
+                setElementVisible("episodes-link", true);
+            },
+            'episodios': () => {
+                showView('episodios');
+                setElementVisible("voltar-link", true);
+                setElementVisible("episodes-link", false);
+            },
+            'episodio/:temporada/:episodio': (temporada, episodio) => {
+                setEpisode(temporada, episodio);
+                showView('episodio');
+                setElementVisible("voltar-link", true);
+                setElementVisible("episodes-link", false);
+            }
+        });
     }
 
     init();
