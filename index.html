@@ -20,6 +20,11 @@
 
     a {
         text-decoration: none;
+        color: gray;
+    }
+
+    li {
+        margin: 7px 0;
     }
 
     .content {
@@ -28,6 +33,7 @@
 
     .logo {
         width: 250px;
+        margin-left: -3px;
     }
 
     .menu {
@@ -38,8 +44,8 @@
         color: white;
         background-color: black;
         text-decoration: none;
-        margin: 5px;
-        padding: 5px;
+        margin: 0px;
+        padding: 5px 10px;
         cursor: pointer;
     }
 
@@ -72,10 +78,6 @@
         padding: 5px 0;
     }
 
-    .footer a {
-        color: gray;
-    }
-
     .hide {
         display: none;
     }
@@ -92,13 +94,13 @@
         border-radius: 0 0 10px 10px;
     }
 </style>
-
 <body>
     <div id="FixedHeader" class="header">
         <a href=""><img class="logo" src="sources/epopeia-logo-hc.png"></img></a>
         <div class="menu">
-            <a id="episodes-link" href="#episodios" class="view"><span>►</span> Lista de episódios</a>
-            <a id="voltar-link" href="" class="view hide"><span>←</span> voltar</a>
+            <a href="#episodios">Episódios</a>
+            <a href="#saiba-mais">Saiba mais</a>
+            <a href="#edital">Edital</a>
         </div>
     </div>
     <div class="content">
@@ -111,15 +113,8 @@
             <span id="episode-description"></span>
         </div>
         <div id="episodios" class="section view hide"></div>
-        <div id="home" class="section view">
-            <div>
-                Acreditamos que podcasts e audio-books são mídias em ascensão. Ao longo dos próximos anos, esses
-                formatos serão amplamente adotados pelos brasileiros. Inspirados nessa expectativa o EPOPEIA surgiu.
-                Somos um podcast que seleciona histórias curtas de escritores promissores e as transforma em áudio! Com
-                as mãos livres, você pode ouvir enquanto _________ (lava a louça, planta bananeira, sei lá, preencha
-                essa lacuna com o que quiser).
-            </div>
-        </div>
+        <div id="edital" class="section view hide"></div>
+        <div id="saiba-mais" class="section view"></div>
         <div class="footer">
             <div class="social">
                 <a href="https://www.instagram.com/epopeiapodcast/" target="_blank"><img src="sources/instagram.svg"
@@ -133,11 +128,7 @@
                 <a href="https://anchor.fm/s/1e0beb40/podcast/rss" target="_blank"><img src="sources/rss.svg"
                         alt="Rss"></img></a>
             </div>
-            <div>Todas as imagens e sons utilizados pelo Epopéia são livres de atribuição autoral. Os textos que
-                publicamos não podem ser utilizados sem a autorização de seus autores.</div>
-            <div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a
-                    href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
-            <div>EpopeiaPodcast@gmail.com</div>
+            <div>epopeiapodcast@gmail.com</div>
         </div>
     </div>
 </body>
@@ -203,6 +194,11 @@
             });
     }
 
+    async function loadHtml(elementId, htmlFile) {
+        const contentDiv = document.getElementById(elementId);
+        contentDiv.innerHTML = await (await fetch(htmlFile)).text();
+    }
+
     function setEpisode(temporada, episodio) {
         let ep = episodes.find((item) => item.season == temporada && item.episode == episodio);
         document.getElementById('episode-cover').setAttribute("src", ep.img);
@@ -211,33 +207,27 @@
         document.getElementById('episode-description').innerHTML = ep.description;
     }
 
-    function setElementVisible(elementId, show) {
-        if (show) {
-            document.getElementById(elementId).classList.remove(hideClass);
-        } else {
-            document.getElementById(elementId).classList.add(hideClass);
-        }
-    }
-
     async function init() {
         await getEpisodesFromRss();
 
         routie({
             '': () => {
-                showView('home');
-                setElementVisible("voltar-link", false);
-                setElementVisible("episodes-link", true);
+                showView('episodios');
+            },
+            'edital': async () => {
+                await loadHtml("edital", "edital.html");
+                showView('edital');
+            },
+            'saiba-mais': async () => {
+                await loadHtml("saiba-mais", "saiba-mais.html");
+                showView('saiba-mais');
             },
             'episodios': () => {
                 showView('episodios');
-                setElementVisible("voltar-link", true);
-                setElementVisible("episodes-link", false);
             },
             'episodio/:temporada/:episodio': (temporada, episodio) => {
                 setEpisode(temporada, episodio);
                 showView('episodio');
-                setElementVisible("voltar-link", true);
-                setElementVisible("episodes-link", false);
             }
         });
     }
